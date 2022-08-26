@@ -1,0 +1,29 @@
+FROM nvidia/cuda:11.6.1-devel-ubuntu20.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install git build-essential libssl-dev g++ cmake software-properties-common nano python3-pip less --no-install-recommends  -y
+RUN python3.8 -m pip install jupyterlab numpy pandas
+RUN python3.8 -m pip install torch torchvision torchaudio
+
+COPY . /zfp
+
+RUN mkdir /zfp/build
+RUN mkdir /data/
+
+WORKDIR /zfp/build
+RUN cmake -DZFP_WITH_CUDA=true -DBUILD_EXAMPLES=ON -DBUILD_CODE=ON  -DBUILD_TESTING=OFF ..
+#RUN cmake -DZFP_WITH_CUDA=true -DBUILD_CODE=ON  ..
+#RUN cmake -DZFP_WITH_CUDA=true -DBUILD_ZFPY=ON -DPYTHON_INCLUDE_DIR=/usr/include/python3.11 -DPYTHON_LIBRARIES=/usr/lib/libpython3.11.so  ..
+RUN cmake --build . --config Release
+
+EXPOSE 8888
+
+WORKDIR /zfp/
+
+
+ENTRYPOINT [ "jupyter-lab", "--ip=0.0.0.0" ,"--allow-root" ,"--NotebookApp.token=''" ,"--NotebookApp.password=''" ]
+
+#RUN COMMAND
+#docker run -it --gpus=all -p 8888:8888 zfp
